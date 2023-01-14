@@ -1,0 +1,4 @@
+create table groups (group_name : string)
+create table users (user_name : string, password : string, group: groups)
+insert groups ()
+insert users ("user1", "1234")

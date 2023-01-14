@@ -1,0 +1,11 @@
+# A very small DB engine written from scratch in Go.
+
+This small database implementation was written as a learning exercise to learn Golang.
+
+It supports the following commands:
+
+create table tbl_name (cols)
+drop table tbl_name
+insert tbl_name (values)
+
+
