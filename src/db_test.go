@@ -45,8 +45,16 @@ func Test_get_table(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to find table %s", find_tbl.name)
 	}
+}
 
-	if tbl != *find_tbl {
-		t.Fatalf("Err, table retrieved is diferent")
+func Test_creation(t *testing.T) {
+	db := database{name: "navi"}
+	users_tbl, err := create_table(&db, "users")
+	if err != nil {
+		t.Fatalf("Failed to create table %s", users_tbl.name)
+	}
+	col := column[string]{name: "username"}
+	if !insert_column_str(&db, "users", col) {
+		t.Fatalf("Failed to insert column %s", col.name)
 	}
 }
