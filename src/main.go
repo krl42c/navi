@@ -1,44 +1,33 @@
 package main
 
-import (
-	"fmt"
-	"io/ioutil"
-	"log"
-	"os"
-)
-
-type file_ident struct {
-	filename  string
-	full_path string
-	uptodate  bool
-}
-
-type file_record struct {
-	file_list []file_ident
-}
-
-func clear(record *file_record) {
-}
+import "fmt"
 
 func main() {
-	record := file_record{file_list: nil}
+	db := database{name: "localdb"}
+	group_tbl := create_table("groups")
 
-	files, err := ioutil.ReadDir(".")
-	if err != nil {
-		log.Fatal(err)
+	insert := db.insert_table(group_tbl)
+
+	if insert != nil {
+		fmt.Println("Error appending table %s", group_tbl.name)
 	}
 
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
+	name_col := column[string]{name: "name"}
+	password_col := column[string]{name: "category"}
 
-	for _, file := range files {
-		full_path := wd + file.Name()
-		record.file_list = append(record.file_list, file_ident{filename: file.Name(), full_path: full_path, uptodate: true})
-	}
+	db.tables[0].insert_col_str(name_col)
+	db.tables[0].insert_col_str(password_col)
 
-	for _, f := range record.file_list {
-		fmt.Println(f)
+	r1 := row[string]{index: 1, value: "admin"}
+	r2 := row[string]{index: 2, value: "guest"}
+
+	db.tables[0].cols_str[0].rows = append(db.tables[0].cols_str[0].rows, r1)
+	db.tables[0].cols_str[0].rows = append(db.tables[0].cols_str[0].rows, r2)
+
+	lines := lex_line("create table groups (name value)")
+	tokens := construct_tokens(lines)
+
+	for _, tok := range tokens {
+		fmt.Println(tok)
 	}
 }

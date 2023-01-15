@@ -19,9 +19,8 @@ type table struct {
 }
 
 type column[T int32 | string] struct {
-	name      string
-	refers_to *table
-	rows      []row[T]
+	name string
+	rows []row[T]
 }
 
 type row[T int32 | string] struct {
@@ -31,18 +30,30 @@ type row[T int32 | string] struct {
 
 /* Core functionalities */
 
-func create_table(db *database, name string) (tbl table, err error) {
+func create_table(name string) (tbl table) {
 	ret := table{}
-	for _, ref := range db.index {
-		if ref == name {
-			return ret, errors.New("EXISTS")
-		}
-	}
 	ret.name = name
 	ret.id = uint16(rand.Uint32())
-	db.index = append(db.index, name)
-	db.tables = append(db.tables, ret)
-	return ret, nil
+	return ret
+}
+
+func (db *database) insert_table(tbl table) error {
+	for _, ref := range db.index {
+		if ref == tbl.name {
+			return errors.New("EXISTS")
+		}
+	}
+	db.tables = append(db.tables, tbl)
+	db.index = append(db.index, tbl.name)
+	return nil
+}
+
+func (tbl *table) insert_col_str(col column[string]) {
+	tbl.cols_str = append(tbl.cols_str, col)
+}
+
+func (tbl *table) insert_col_int(col column[int32]) {
+	tbl.cols_int = append(tbl.cols_int, col)
 }
 
 func delete_table_by_name(db *database, tbl_name string) bool {
