@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type token_type int16
 
 const (
@@ -13,6 +11,7 @@ const (
 	TYPE
 	OPEN_PAREN
 	CLOSED_PAREN
+	ENDLINE
 )
 
 type token struct {
@@ -66,13 +65,13 @@ func construct_tokens(tokens []string) []token {
 		case ")":
 			tok = token{ttype: CLOSED_PAREN}
 		default:
-			tok = token{ttype: IDENTIFIER}
+			tok = token{ttype: IDENTIFIER, tvalue: t}
 		}
-		fmt.Println(t)
 		if t != "" {
 			ret_toks = append(ret_toks, tok)
 		}
 	}
 
+	ret_toks = append(ret_toks, token{ttype: ENDLINE})
 	return ret_toks
 }
