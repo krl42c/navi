@@ -28,7 +28,7 @@ func execute_line(db *database, line string, line_number int) (err error) {
 	case CREATE:
 		return create(db, tokens, line_number)
 	case INSERT:
-		insert(db, tokens)
+		return insert(db, tokens, line_number)
 	case DROP:
 		drop(db, tokens)
 	}
@@ -63,8 +63,26 @@ func create(db *database, toks []token, line_number int) (err error) {
 	return nil
 }
 
-func insert(db *database, toks []token) {
+func insert(db *database, toks []token, line_number int) (err error) {
+	tbl, err := get_table(db, toks[1].tvalue)
+	if err != nil {
+		return err
+	}
+	insert_values := []string{}
 
+	if toks[2].ttype == OPEN_PAREN {
+		params := toks[3:]
+		for _,p := range params {
+			if p.ttype != CLOSED_PAREN && p.ttype != ENDLINE {
+				insert_values = append(insert_values, p.tvalue)
+			}
+		}
+	}
+
+	for i,ins := range insert_values {
+		tbl.cols_str[i].rows = append(tbl.cols_str[i].rows, row[string]{value: ins})
+	}
+	return nil
 }
 
 func drop(db *database, toks []token) {
