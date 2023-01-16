@@ -50,8 +50,13 @@ func main() {
 		file_scanner := bufio.NewScanner(read_file)
 		file_scanner.Split(bufio.ScanLines)
 
+		line_number := 0
 		for file_scanner.Scan() {
-			execute_line(&db, file_scanner.Text())
+			err := execute_line(&db, file_scanner.Text(), line_number)
+			if err != nil {
+				fmt.Printf(err.Error())
+			}
+			line_number++
 		}
 
 		read_file.Close()

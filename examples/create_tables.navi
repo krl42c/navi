@@ -1,3 +1,2 @@
 create groups (group_name)
-create users (user_name password)
-create test ()
+insert groups ("g1")

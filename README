@@ -2,10 +2,17 @@
 
 This small database implementation was written as a learning exercise to learn Golang.
 
-It supports the following commands:
+It supports creation and insertion commands right now.
 
-create table tbl_name (cols)
-drop table tbl_name
-insert tbl_name (values)
+Usage: 
+
+./navi -s /path-to-script
 
 
+# Script format
+
+- Table creation:
+    create table_name (col1 col2 col3)
+
+- Insertion
+    insert table_name (col1=val1 col2=val2 col3=val3)
