@@ -1,4 +1,4 @@
-# A very small DB engine written from scratch in Go.
+# A very small "DB engine" written from scratch in Go.
 
 This small database implementation was written as a learning exercise to learn Golang.
 
