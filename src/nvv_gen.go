@@ -37,6 +37,8 @@ type ins struct {
 	p3   string
 }
 
+/* Utility functions to generate commonly used instructions with fixed register data */
+
 func _commit(addr uint16) ins {
 	return ins{addr: addr, op: COMMIT, p1: 0, p2: 0, p3: "0"}
 }
@@ -57,6 +59,8 @@ func nvv_start_transaction() ins {
 	transaction := ins{addr: 0, op: TRANSACTION, p1: 0, p2: 0, p3: "0"}
 	return transaction
 }
+
+/* Code translation into instruction sets */
 
 func nvv_insert(db *database, st statement) int32 {
 	tbl_name := st.tokens[1].tvalue
