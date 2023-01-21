@@ -22,8 +22,46 @@ const (
 	ISTRUE                  // This opcode implements the IS TRUE, IS FALSE, IS NOT TRUE, and IS NOT FALSE operators.
 	ISTYPE                  // Jump to P2 if the type of a column in a btree is one of the types specified by the P5 bitmask.
 	JUMP                    // Jump to the instruction at address P1, P2, or P3 depending on whether in the most recent Compare instruction the P1 vector was less than equal to, or greater than the P2 vector, respectively.
+	OPEN_WRITE
+	TRANSACTION
+	CLOSE
+	COMMIT
+	HALT
 )
 
-func prepare(db *database, st statement) int32 {
+type ins struct {
+	addr uint16
+	op   opcode
+	p1   int16
+	p2   int16
+	p3   string
+}
+
+func prepare(db *database, tbl_name string, st statement) int32 {
+	var addr uint16 = 1
+	instruction_stack := []ins{}
+	if st.stype == SCREATE {
+		// Prepare before insert
+		instruction_stack = append(instruction_stack, start_transaction())
+		open_write := ins{addr: addr, op: OPEN_WRITE, p1: 0, p2: 0, p3: tbl_name}
+		addr++
+		instruction_stack = append(instruction_stack, open_write)
+
+		// Insert operations here
+
+		// Close
+		close := ins{addr: addr, op: CLOSE, p1: 0, p2: 0, p3: "0"}
+		addr++
+		commit := ins{addr: addr, op: COMMIT, p1: 0, p2: 0, p3: "0"}
+		addr++
+		halt := ins{addr: addr, op: HALT, p1: 0, p2: 0, p3: "0"}
+		addr++
+		instruction_stack = append(instruction_stack, close, commit, halt)
+	}
 	return 0
+}
+
+func start_transaction() ins {
+	transaction := ins{addr: 0, op: TRANSACTION, p1: 0, p2: 0, p3: "0"}
+	return transaction
 }
