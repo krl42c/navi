@@ -1,5 +1,10 @@
 package main
 
+import (
+	"encoding/gob"
+	"os"
+)
+
 type opcode byte
 
 // Opcodes taken from https://www.sqlite.org/opcode.html
@@ -62,5 +67,26 @@ func nvv_insert(db *database, tbl_name string, st statement) int32 {
 		addr++
 		instruction_stack = append(instruction_stack, close, commit, halt)
 	}
+	generate_code("bytecode.gob", instruction_stack)
 	return 0
+}
+
+// https://pkg.go.dev/encoding/gob
+func generate_code(file_path string, stack []ins) error {
+	err := write_gob(file_path, stack)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func write_gob(filePath string, object interface{}) error {
+	file, err := os.Create(filePath)
+	if err == nil {
+		encoder := gob.NewEncoder(file)
+		encoder.Encode(object)
+	}
+	file.Close()
+	return err
 }

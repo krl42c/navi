@@ -84,14 +84,14 @@ func insert(db *database, toks []token, line_number int) (err error) {
 
 	if toks[2].ttype == OPEN_PAREN {
 		params := toks[3:]
-		for _,p := range params {
+		for _, p := range params {
 			if p.ttype != CLOSED_PAREN && p.ttype != ENDLINE {
 				insert_values = append(insert_values, p.tvalue)
 			}
 		}
 	}
 
-	for i,ins := range insert_values {
+	for i, ins := range insert_values {
 		tbl.cols_str[i].rows = append(tbl.cols_str[i].rows, row[string]{value: ins})
 	}
 	return nil
