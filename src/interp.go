@@ -8,6 +8,18 @@ type syntax_error struct {
 	excepted string
 }
 
+type statement_type int16
+
+const (
+	SCREATE statement_type = iota
+	SINSERT
+)
+
+type statement struct {
+	stype   statement_type
+	content string
+}
+
 func (r *syntax_error) Error() string {
 	return fmt.Sprintf("Syntax error on line %d: Excepted %s , Found %s ", r.line, r.excepted, r.actual)
 }
