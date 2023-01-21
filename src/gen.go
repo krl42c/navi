@@ -37,18 +37,22 @@ type ins struct {
 	p3   string
 }
 
-func prepare(db *database, tbl_name string, st statement) int32 {
+func nvv_start_transaction() ins {
+	transaction := ins{addr: 0, op: TRANSACTION, p1: 0, p2: 0, p3: "0"}
+	return transaction
+}
+
+func nvv_insert(db *database, tbl_name string, st statement) int32 {
 	var addr uint16 = 1
 	instruction_stack := []ins{}
 	if st.stype == SCREATE {
 		// Prepare before insert
-		instruction_stack = append(instruction_stack, start_transaction())
+		instruction_stack = append(instruction_stack, nvv_start_transaction())
 		open_write := ins{addr: addr, op: OPEN_WRITE, p1: 0, p2: 0, p3: tbl_name}
 		addr++
 		instruction_stack = append(instruction_stack, open_write)
 
 		// Insert operations here
-
 		// Close
 		close := ins{addr: addr, op: CLOSE, p1: 0, p2: 0, p3: "0"}
 		addr++
@@ -59,9 +63,4 @@ func prepare(db *database, tbl_name string, st statement) int32 {
 		instruction_stack = append(instruction_stack, close, commit, halt)
 	}
 	return 0
-}
-
-func start_transaction() ins {
-	transaction := ins{addr: 0, op: TRANSACTION, p1: 0, p2: 0, p3: "0"}
-	return transaction
 }
