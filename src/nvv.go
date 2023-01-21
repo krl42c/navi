@@ -22,7 +22,7 @@ const (
 	IFNOT                   // Jump to P2 if the value in register P1 is False. The value is considered false if it has a numeric value of zero. If the value in P1 is NULL then take the jump if and only if P3 is non-zero.
 	_INSERT                 // Write an entry into the table of cursor P1. A new entry is created if it doesn't already exist or the data for an existing entry is overwritten. The data is the value MEM_Blob stored in register number P2. The key is stored in register P3. The key must be a MEM_Int.
 	INTEGER                 // The 32-bit integer value P1 is written into register P2.
-	STRING                  // The string value P4 of length P1 (bytes) is stored in register P2.
+	STRING8                 // The string value P4 of length P1 (bytes) is stored in register P2.
 	ISNULL                  // Jump to P2 if the value in register P1 is NULL.
 	ISTRUE                  // This opcode implements the IS TRUE, IS FALSE, IS NOT TRUE, and IS NOT FALSE operators.
 	ISTYPE                  // Jump to P2 if the type of a column in a btree is one of the types specified by the P5 bitmask.
@@ -50,14 +50,15 @@ func nvv_start_transaction() ins {
 func nvv_insert(db *database, tbl_name string, st statement) int32 {
 	var addr uint16 = 1
 	instruction_stack := []ins{}
-	if st.stype == SCREATE {
+	if st.stype == SINSERT {
 		// Prepare before insert
 		instruction_stack = append(instruction_stack, nvv_start_transaction())
 		open_write := ins{addr: addr, op: OPEN_WRITE, p1: 0, p2: 0, p3: tbl_name}
 		addr++
 		instruction_stack = append(instruction_stack, open_write)
 
-		// Insert operations here
+		// TODO: Insert operations here
+
 		// Close
 		close := ins{addr: addr, op: CLOSE, p1: 0, p2: 0, p3: "0"}
 		addr++
@@ -67,8 +68,24 @@ func nvv_insert(db *database, tbl_name string, st statement) int32 {
 		addr++
 		instruction_stack = append(instruction_stack, close, commit, halt)
 	}
-	generate_code("bytecode.gob", instruction_stack)
+	generate_code("insert.nvvbc", instruction_stack)
 	return 0
+}
+
+func nvv_create_table(db *database, tbl_name string, addr uint16) {
+	// Table creation setup
+	instruction_stack := []ins{}
+	open_write := ins{addr: addr, op: OPEN_WRITE, p1: 0, p2: 0, p3: tbl_name}
+	addr++
+	str_len := int16(len(tbl_name))
+	string8 := ins{addr: addr, op: STRING8, p1: 0, p2: str_len, p3: tbl_name}
+	addr++
+
+	// TODO: Creation operation
+
+	halt := ins{addr: addr, op: HALT, p1: 0, p2: 0, p3: "0"}
+	instruction_stack = append(instruction_stack, open_write, string8)
+	instruction_stack = append(instruction_stack, halt)
 }
 
 // https://pkg.go.dev/encoding/gob
