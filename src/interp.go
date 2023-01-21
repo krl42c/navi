@@ -16,8 +16,8 @@ const (
 )
 
 type statement struct {
-	stype   statement_type
-	content string
+	stype  statement_type
+	tokens []token
 }
 
 func (r *syntax_error) Error() string {
@@ -32,7 +32,7 @@ func syntax_err(line int, actual string, excepted string) error {
 	}
 }
 
-func execute_line(db *database, line string, line_number int) (err error) {
+func execute_line(db *database, line string, line_number int) (toks []token, err error) {
 	tokens_str := lex_line(line)
 	tokens := construct_tokens(tokens_str)
 	fmt.Println(tokens)
@@ -40,45 +40,51 @@ func execute_line(db *database, line string, line_number int) (err error) {
 	case CREATE:
 		return create(db, tokens, line_number)
 	case INSERT:
-		return insert(db, tokens, line_number)
+		data, err := insert(db, tokens, line_number)
+		if err != nil {
+			return nil, err
+		}
+		st := statement{stype: SCREATE, tokens: data}
+		nvv_insert(db, st)
+
 	case DROP:
 		drop(db, tokens)
 	}
-	return fmt.Errorf("Couldnt execute line")
+	return nil, fmt.Errorf("Couldnt execute line")
 }
 
-func create(db *database, toks []token, line_number int) (err error) {
+func create(db *database, toks []token, line_number int) (tokens []token, err error) {
 	tbl_name := toks[1].tvalue
 	tbl := create_table(tbl_name)
 	db.insert_table(tbl)
 
 	if toks[2].ttype != OPEN_PAREN {
-		return syntax_err(line_number, toks[2].tvalue, "(")
+		return nil, syntax_err(line_number, toks[2].tvalue, "(")
 	}
 
 	if toks[3].ttype != IDENTIFIER {
-		return syntax_err(line_number, toks[2].tvalue, "column name")
+		return nil, syntax_err(line_number, toks[2].tvalue, "column name")
 	}
 
 	if toks[2].ttype == OPEN_PAREN {
 		params := toks[3:]
 		if params == nil {
-			return syntax_err(line_number, "nil", "parameter_list")
+			return nil, syntax_err(line_number, "nil", "parameter_list")
 		}
 		for _, p := range params {
 			if p.ttype != CLOSED_PAREN && p.ttype != ENDLINE {
 				col := column[string]{name: p.tvalue}
-				db.tables[len(db.tables)-1].cols_str = append(db.tables[len(db.tables)-1].cols_str, col)
+				db.tables[len(db.tables)-1].cols_str = append(db.tables[len(db.tables)-1].cols_str, col) // Mock creation
 			}
 		}
 	}
-	return nil
+	return toks, nil
 }
 
-func insert(db *database, toks []token, line_number int) (err error) {
+func insert(db *database, toks []token, line_number int) (tokens []token, err error) {
 	tbl, err := get_table(db, toks[1].tvalue)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	insert_values := []string{}
 
@@ -94,7 +100,7 @@ func insert(db *database, toks []token, line_number int) (err error) {
 	for i, ins := range insert_values {
 		tbl.cols_str[i].rows = append(tbl.cols_str[i].rows, row[string]{value: ins})
 	}
-	return nil
+	return tokens, nil
 }
 
 func drop(db *database, toks []token) {

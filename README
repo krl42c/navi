@@ -4,8 +4,6 @@ WORK IN PROGRES !!!
 
 This small database implementation was written as a learning exercise to learn Golang.
 
-It supports creation and insertion commands right now.
-
 Usage: 
 
 ./navi -s /path-to-script
@@ -23,3 +21,14 @@ Usage:
 # VM 
 
 Inspiration taken from SQLite: https://www.sqlite.org/vdbe.html
+
+
+# Progress
+
+Front-End:
+    (x) Lexer
+    (x) Static-analyzer (Needs refinement)
+
+Back-end:
+    () Bytecode Generation
+    () VM 

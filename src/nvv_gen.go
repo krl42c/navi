@@ -1,10 +1,5 @@
 package main
 
-import (
-	"encoding/gob"
-	"os"
-)
-
 type opcode byte
 
 // Opcodes taken from https://www.sqlite.org/opcode.html
@@ -42,23 +37,46 @@ type ins struct {
 	p3   string
 }
 
+func _commit(addr uint16) ins {
+	return ins{addr: addr, op: COMMIT, p1: 0, p2: 0, p3: "0"}
+}
+
+func _halt(addr uint16) ins {
+	return ins{addr: addr, op: HALT, p1: 0, p2: 0, p3: "0"}
+}
+
+func _close(addr uint16) ins {
+	return ins{addr: addr, op: CLOSE, p1: 0, p2: 0, p3: "0"}
+}
+
+func _open_write(addr uint16, tbl_name string) ins {
+	return ins{addr: addr, op: OPEN_WRITE, p1: 0, p2: 0, p3: tbl_name}
+}
+
 func nvv_start_transaction() ins {
 	transaction := ins{addr: 0, op: TRANSACTION, p1: 0, p2: 0, p3: "0"}
 	return transaction
 }
 
-func nvv_insert(db *database, tbl_name string, st statement) int32 {
+func nvv_insert(db *database, st statement) int32 {
+	tbl_name := st.tokens[1].tvalue
 	var addr uint16 = 1
 	instruction_stack := []ins{}
 	if st.stype == SINSERT {
 		// Prepare before insert
 		instruction_stack = append(instruction_stack, nvv_start_transaction())
-		open_write := ins{addr: addr, op: OPEN_WRITE, p1: 0, p2: 0, p3: tbl_name}
 		addr++
-		instruction_stack = append(instruction_stack, open_write)
+		instruction_stack = append(instruction_stack, _open_write(addr, tbl_name))
 
 		// TODO: Insert operations here
-
+		params := st.tokens[3:]
+		for _, param := range params {
+			if param.ttype != CLOSED_PAREN && param.ttype != ENDLINE {
+				insert := ins{addr: addr, op: _INSERT, p1: 0, p2: 0, p3: param.tvalue}
+				instruction_stack = append(instruction_stack, insert)
+				addr++
+			}
+		}
 		// Close
 		close := ins{addr: addr, op: CLOSE, p1: 0, p2: 0, p3: "0"}
 		addr++
@@ -86,24 +104,4 @@ func nvv_create_table(db *database, tbl_name string, addr uint16) {
 	halt := ins{addr: addr, op: HALT, p1: 0, p2: 0, p3: "0"}
 	instruction_stack = append(instruction_stack, open_write, string8)
 	instruction_stack = append(instruction_stack, halt)
-}
-
-// https://pkg.go.dev/encoding/gob
-func generate_code(file_path string, stack []ins) error {
-	err := write_gob(file_path, stack)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func write_gob(filePath string, object interface{}) error {
-	file, err := os.Create(filePath)
-	if err == nil {
-		encoder := gob.NewEncoder(file)
-		encoder.Encode(object)
-	}
-	file.Close()
-	return err
 }
