@@ -1,8 +1,12 @@
 package main
 
+import "fmt"
+
 type opcode byte
 
 // Opcodes taken from https://www.sqlite.org/opcode.html
+//
+//go:generate stringer -type=opcode
 const (
 	ADD       opcode = iota // Add the value in register P1 to the value in register P2 and store the result in register P3. If either input is NULL, the result is NULL.
 	ADDIMM                  // Add the constant P2 to the value in register P1. The result is always an integer.
@@ -28,6 +32,29 @@ const (
 	COMMIT
 	HALT
 )
+
+func (o opcode) String() string {
+	switch o {
+	case OPEN_WRITE:
+		return "OPEN_WRITE"
+	case TRANSACTION:
+		return "TRANSACTION"
+	case CLOSE:
+		return "CLOSE"
+	case COMMIT:
+		return "COMMIT"
+	case HALT:
+		return "HALT"
+	case STRING8:
+		return "STRING8"
+	case INTEGER:
+		return "INTEGER"
+	case _INSERT:
+		return "INSERT"
+	default:
+		return "OP"
+	}
+}
 
 type ins struct {
 	addr uint16
@@ -55,9 +82,16 @@ func _open_write(addr uint16, tbl_name string) ins {
 	return ins{addr: addr, op: OPEN_WRITE, p1: 0, p2: 0, p3: tbl_name}
 }
 
-func nvv_start_transaction() ins {
-	transaction := ins{addr: 0, op: TRANSACTION, p1: 0, p2: 0, p3: "0"}
-	return transaction
+func _transaction(addr uint16) ins {
+	return ins{addr: addr, op: TRANSACTION, p1: 0, p2: 0, p3: "0"}
+}
+
+/* Utility function to print an instruction set in a human-raedable way*/
+func dbg_instruction_set(set []ins) {
+	fmt.Println("ADDR 		OP		P1		P2		P3")
+	for _, instruction := range set {
+		fmt.Println(instruction.addr, "		", instruction.op, "		", instruction.p1, "		", instruction.p2, "		", instruction.p3)
+	}
 }
 
 /* Code translation into instruction sets */
@@ -68,8 +102,7 @@ func nvv_insert(db *database, st statement) int32 {
 	instruction_stack := []ins{}
 	if st.stype == SINSERT {
 		// Prepare before insert
-		instruction_stack = append(instruction_stack, nvv_start_transaction())
-		addr++
+		instruction_stack = append(instruction_stack, _transaction(0))
 		instruction_stack = append(instruction_stack, _open_write(addr, tbl_name))
 
 		// TODO: Insert operations here
@@ -91,6 +124,8 @@ func nvv_insert(db *database, st statement) int32 {
 		instruction_stack = append(instruction_stack, close, commit, halt)
 	}
 	generate_code("insert.nvvbc", instruction_stack)
+	dbg_instruction_set(instruction_stack)
+
 	return 0
 }
 

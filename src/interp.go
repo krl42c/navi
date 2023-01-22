@@ -35,18 +35,14 @@ func syntax_err(line int, actual string, excepted string) error {
 func execute_line(db *database, line string, line_number int) (toks []token, err error) {
 	tokens_str := lex_line(line)
 	tokens := construct_tokens(tokens_str)
-	fmt.Println(tokens)
 	switch tokens[0].ttype {
 	case CREATE:
 		return create(db, tokens, line_number)
 	case INSERT:
-		data, err := insert(db, tokens, line_number)
-		if err != nil {
-			return nil, err
-		}
-		st := statement{stype: SCREATE, tokens: data}
+		//data, err := insert(db, tokens, line_number)
+		st := statement{stype: SINSERT, tokens: tokens}
 		nvv_insert(db, st)
-
+		return tokens, nil
 	case DROP:
 		drop(db, tokens)
 	}
