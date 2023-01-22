@@ -1,0 +1,2 @@
+create example (r1 r2)
+insert example (val1 val2)
