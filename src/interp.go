@@ -37,7 +37,9 @@ func execute_line(db *database, line string, line_number int) (toks []token, err
 	tokens := construct_tokens(tokens_str)
 	switch tokens[0].ttype {
 	case CREATE:
-		return create(db, tokens, line_number)
+		st := statement{stype: SCREATE, tokens: tokens}
+		nvv_create_table(db, st.tokens[1].tvalue, 0)
+		return tokens, nil
 	case INSERT:
 		//data, err := insert(db, tokens, line_number)
 		st := statement{stype: SINSERT, tokens: tokens}
