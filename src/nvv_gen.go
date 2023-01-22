@@ -31,6 +31,7 @@ const (
 	CLOSE
 	COMMIT
 	HALT
+	_CREATE
 )
 
 func (o opcode) String() string {
@@ -51,6 +52,8 @@ func (o opcode) String() string {
 		return "INTEGER"
 	case _INSERT:
 		return "INSERT"
+	case _CREATE:
+		return "CREATE"
 	default:
 		return "OP"
 	}
@@ -62,6 +65,7 @@ type ins struct {
 	p1   int16
 	p2   int16
 	p3   string
+	p4   string
 }
 
 /* Utility functions to generate commonly used instructions with fixed register data */
@@ -96,12 +100,22 @@ func _transaction(addr *uint16) ins {
 	return inst
 }
 
-/* Utility function to print an instruction set in a human-raedable way*/
+/* Utility function to print an instruction set in a human-readable way*/
 func dbg_instruction_set(set []ins) {
-	fmt.Println("ADDR 		OP		P1		P2		P3")
+	fmt.Println("ADDR 		OP			P1		P2		P3		P4")
 	for _, instruction := range set {
-		fmt.Println(instruction.addr, "		", instruction.op, "		", instruction.p1, "		", instruction.p2, "		", instruction.p3)
+		fmt.Println(instruction.addr, "		",
+			instruction.op, "		",
+			instruction.p1, "		",
+			instruction.p2, "		",
+			instruction.p3, "		",
+			instruction.p4)
 	}
+}
+
+func dbg_instruction(instruction ins) {
+	fmt.Println("ADDR 		OP		P1		P2		P3")
+	fmt.Println(instruction.addr, "		", instruction.op, "		", instruction.p1, "		", instruction.p2, "		", instruction.p3)
 }
 
 /* Code translation into instruction sets */
@@ -118,20 +132,16 @@ func nvv_insert(db *database, st statement) int32 {
 		params := st.tokens[3:]
 		for _, param := range params {
 			if param.ttype != CLOSED_PAREN && param.ttype != ENDLINE {
-				insert := ins{addr: addr, op: _INSERT, p1: 0, p2: 0, p3: param.tvalue}
+				insert := ins{addr: addr, op: _INSERT, p1: 0, p2: 0, p3: param.tvalue, p4: tbl_name}
 				instruction_stack = append(instruction_stack, insert)
 				addr++
 			}
 		}
-		close := _close(&addr)
-		commit := _commit(&addr)
-		halt := _halt(&addr)
-		instruction_stack = append(instruction_stack, close, commit, halt)
+		instruction_stack = append(instruction_stack, _close(&addr), _commit(&addr), _halt(&addr))
 	}
 
 	//generate_code("insert.nvvbc", instruction_stack)
 	dbg_instruction_set(instruction_stack)
-
 	return 0
 }
 
@@ -143,10 +153,12 @@ func nvv_create_table(db *database, tbl_name string, addr uint16) {
 	str_len := int16(len(tbl_name))
 	string8 := ins{addr: addr, op: STRING8, p1: 0, p2: str_len, p3: tbl_name}
 	addr++
-
+	create := ins{addr: addr, op: _CREATE, p1: 0, p2: 0, p3: tbl_name}
 	// TODO: Creation operation
 
 	halt := ins{addr: addr, op: HALT, p1: 0, p2: 0, p3: "0"}
-	instruction_stack = append(instruction_stack, open_write, string8)
+	instruction_stack = append(instruction_stack, open_write, string8, create)
 	instruction_stack = append(instruction_stack, halt)
+
+	dbg_instruction_set(instruction_stack)
 }
