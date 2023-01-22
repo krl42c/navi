@@ -66,24 +66,34 @@ type ins struct {
 
 /* Utility functions to generate commonly used instructions with fixed register data */
 
-func _commit(addr uint16) ins {
-	return ins{addr: addr, op: COMMIT, p1: 0, p2: 0, p3: "0"}
+func _commit(addr *uint16) ins {
+	inst := ins{addr: *addr, op: COMMIT, p1: 0, p2: 0, p3: "0"}
+	*addr++
+	return inst
 }
 
-func _halt(addr uint16) ins {
-	return ins{addr: addr, op: HALT, p1: 0, p2: 0, p3: "0"}
+func _halt(addr *uint16) ins {
+	inst := ins{addr: *addr, op: HALT, p1: 0, p2: 0, p3: "0"}
+	*addr++
+	return inst
 }
 
-func _close(addr uint16) ins {
-	return ins{addr: addr, op: CLOSE, p1: 0, p2: 0, p3: "0"}
+func _close(addr *uint16) ins {
+	inst := ins{addr: *addr, op: CLOSE, p1: 0, p2: 0, p3: "0"}
+	*addr++
+	return inst
 }
 
-func _open_write(addr uint16, tbl_name string) ins {
-	return ins{addr: addr, op: OPEN_WRITE, p1: 0, p2: 0, p3: tbl_name}
+func _open_write(addr *uint16, tbl_name string) ins {
+	inst := ins{addr: *addr, op: OPEN_WRITE, p1: 0, p2: 0, p3: tbl_name}
+	*addr++
+	return inst
 }
 
-func _transaction(addr uint16) ins {
-	return ins{addr: addr, op: TRANSACTION, p1: 0, p2: 0, p3: "0"}
+func _transaction(addr *uint16) ins {
+	inst := ins{addr: *addr, op: TRANSACTION, p1: 0, p2: 0, p3: "0"}
+	*addr++
+	return inst
 }
 
 /* Utility function to print an instruction set in a human-raedable way*/
@@ -98,14 +108,13 @@ func dbg_instruction_set(set []ins) {
 
 func nvv_insert(db *database, st statement) int32 {
 	tbl_name := st.tokens[1].tvalue
-	var addr uint16 = 1
+	var addr uint16 = 0
 	instruction_stack := []ins{}
 	if st.stype == SINSERT {
 		// Prepare before insert
-		instruction_stack = append(instruction_stack, _transaction(0))
-		instruction_stack = append(instruction_stack, _open_write(addr, tbl_name))
-
-		// TODO: Insert operations here
+		instruction_stack = append(instruction_stack, _transaction(&addr))
+		instruction_stack = append(instruction_stack, _open_write(&addr, tbl_name))
+		// @FIXME: Duplicated code from interp.go (lexical analysis), @REFACTOR
 		params := st.tokens[3:]
 		for _, param := range params {
 			if param.ttype != CLOSED_PAREN && param.ttype != ENDLINE {
@@ -114,16 +123,13 @@ func nvv_insert(db *database, st statement) int32 {
 				addr++
 			}
 		}
-		// Close
-		close := ins{addr: addr, op: CLOSE, p1: 0, p2: 0, p3: "0"}
-		addr++
-		commit := ins{addr: addr, op: COMMIT, p1: 0, p2: 0, p3: "0"}
-		addr++
-		halt := ins{addr: addr, op: HALT, p1: 0, p2: 0, p3: "0"}
-		addr++
+		close := _close(&addr)
+		commit := _commit(&addr)
+		halt := _halt(&addr)
 		instruction_stack = append(instruction_stack, close, commit, halt)
 	}
-	generate_code("insert.nvvbc", instruction_stack)
+
+	//generate_code("insert.nvvbc", instruction_stack)
 	dbg_instruction_set(instruction_stack)
 
 	return 0
